@@ -87,8 +87,8 @@ var Chip8Core = function(GFX, Keypad) {
 	};
 
 	this.hw60HzClockTick = function () {
-		if (this.DT > 0) this.DT--;
-		if (this.ST > 0) this.ST--;
+		if (DT > 0) DT = DT - 1;
+		if (ST > 0) ST = ST - 1;
 	};
 
 	this.tact = function (numInstructions) {
@@ -292,7 +292,6 @@ var Chip8Core = function(GFX, Keypad) {
 			}
 		}
 
-		PC += 2; return;
+		PC += 2;
 	};
-
 };
