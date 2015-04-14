@@ -6,11 +6,11 @@ var Chip8Core = function(GFX, Keypad) {
 	/* CPU Core */
 
 	// RAM
-	var	RAM = this.RAM = new Uint8Array(0x1000),
+	var	RAM = this.RAM = new Uint8Array(0x1000);
 
 	// Memory layout
-	var FontSetAddr    = 0x050,
-	var ProgramRomAddr = 0x200,
+	var FontSetAddr    = 0x050;
+	var ProgramRomAddr = 0x200;
 
 	// CPU registers (v1, v2, v3 ... v16)
 	var VX = this.VX = new Uint8Array(0x10);
