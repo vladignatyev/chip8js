@@ -1,8 +1,31 @@
+<!DOCTYPE html>
 <html>
-	<head>
-		<script type="text/javascript" src="js/Chip8Core.js"></script>
-		<script type="text/javascript"></script>
-	</head>
-	<body>
-	</body>
+<head>
+	<script type="text/javascript" src="js/Chip8Core.js"></script>
+	<script type="text/javascript">
+		var chip8 = new Chip8Core(null);
+
+
+		function handleFileSelect(event) {
+			var files = event.target.files;
+			var romFile = files[0];
+			
+			var reader = new FileReader();
+			reader.onloadend = function(){
+				chip8.loadROM(reader.result);
+			};
+			reader.readAsBinaryString(romFile);
+		};
+
+		window.onload = function () {
+			document.getElementById('romSelector').addEventListener('change', handleFileSelect, false);
+		};
+	</script>
+</head>
+<body>
+	<input type="file" id="romSelector" />
+
+
+
+</body>
 </html>

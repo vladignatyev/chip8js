@@ -6,27 +6,32 @@ var Chip8Core = function(GFX, Keypad) {
 	/* CPU Core */
 
 	// RAM
-	var	RAM = this.RAM = new Uint8Array(0x1000);
+	this.RAM = new Uint8Array(0x1000);
 
 	// Memory layout
 	var FontSetAddr    = 0x050;
 	var ProgramRomAddr = 0x200;
 
 	// CPU registers (v1, v2, v3 ... v16)
-	var VX = this.VX = new Uint8Array(0x10);
+	this.VX = new Uint8Array(0x10);
 			
 	// Index register
-	var I = this.I = 0;
+	this.I = 0;
 	// Program counter
-	var PC = this.PC = 0;
+	this.PC = 0;
 	
 	// Delay time register
-	var DT = this.DT = 0;
+	this.DT = 0;
 	// Sound time register
-	var ST = this.ST = 0;
+	this.ST = 0;
 
-	var Stack = this.Stack = new Uint16Array(0x10),
-			StackPointer = this.StackPointer = 0x000;
+	this.Stack = new Uint16Array(0x10);
+	this.StackPointer = 0x000;
+
+
+	var RAM = this.RAM, VX = this.VX, I = this.I, 
+			PC = this.PC, DT = this.DT, ST = this.ST, 
+			Stack = this.Stack, StackPointer = this.StackPointer;
 
 	var BuiltinFontSetData = [
 			0xF0, 0x90, 0x90, 0x90, 0xF0,  // 0
@@ -50,30 +55,30 @@ var Chip8Core = function(GFX, Keypad) {
 	/*  */
 
 	this.initialize = function () {
-		I = 0x000;
-		PC = 0x200;
+		this.I = 0x000;
+		this.PC = 0x200;
 
 		for (var i = 0; i < 0x10; i++) {
-			VX[i] = 0x00;
+			this.VX[i] = 0x00;
 		}
 	};
 
-	// this.loadROM = function (blob) {
-	// 	if (blob.length + ProgramRomAddr > 0x1000) {
-	// 		throw "OutOfMemory: ROM size is too big, it couldn't be loaded into RAM.";
-	// 	}
+	this.loadROM = function (blob) {
+		if (blob.length + ProgramRomAddr > 0x1000) {
+			throw "OutOfMemory: ROM size is too big, it couldn't be loaded into RAM.";
+		}
 
-	// 	for (var byteIndex = 0; byteIndex < blob.length; byteIndex++) {
-	// 		RAM[ProgramRomAddr + byteIndex] = blob[byteIndex];
-	// 	}
-	// };
+		for (var byteIndex = 0; byteIndex < blob.length; byteIndex++) {
+			RAM[ProgramRomAddr + byteIndex] = blob.charCodeAt(byteIndex);
+		}
+	};
 
 	// this.loadRAMDump = function() { // todo:
 	// };
 
 	this.hw60HzClockTick = function () {
-		if (DT > 0) DT--;
-		if (ST > 0) ST--;
+		if (this.DT > 0) this.DT--;
+		if (this.ST > 0) this.ST--;
 	};
 
 	// this.addBreakpoint = function (addr) {
