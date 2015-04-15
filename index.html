@@ -1,29 +1,237 @@
 <!DOCTYPE html>
 <html>
 <head>
+	<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+	<script type="text/javascript" src="js/Chip8Keypad.js"></script>
+	<script type="text/javascript" src="js/Chip8GFX.js"></script>
 	<script type="text/javascript" src="js/Chip8Core.js"></script>
+	<style type="text/css">
+		.changed { color: #f00; }
+	</style>
 	<script type="text/javascript">
-		var chip8 = new Chip8Core(null);
+		var gfx = new Chip8GFX();
+		var keypad = new Chip8Keypad();
+		var chip8 = new Chip8Core(gfx, keypad);
 
+		var debug = true;
 
 		function handleFileSelect(event) {
 			var files = event.target.files;
 			var romFile = files[0];
+
 			
 			var reader = new FileReader();
 			reader.onloadend = function(){
 				chip8.loadROM(reader.result);
+				if (debug) renderEmulatorState();
 			};
 			reader.readAsBinaryString(romFile);
 		};
 
+
+		$(document).ready(function(){
+			chip8.initialize();
+
+			for (var i = 0; i < chip8.RAM.length; i++) { // initialize markup for RAM state
+				$('#ramView').append('<tr><td>' + i.toString(16) + '</td><td id="ram' + i + '">' + chip8.RAM[i].toString(16) + '</td></tr>');
+			}
+
+			// function startEmulation(event) {
+			// 	//bindKeyboard();
+			// 	//startGfx();
+			// 	//startSound();
+
+			// 	// tactFrequencyTimer = setInterval(function(){
+			// 	// 	chip8.tact(1);
+			// 	// }, 50);
+
+			// 	// hw60HzTimer = setInterval(function(){
+			// 	// 	chip8.hw60HzClockTick();
+			// 	// }, Math.floor(1000 / 60));
+			// }
+
+			
+		});
+
+		function renderEmulatorState() {
+			var debugRegisters = ['I', 'PC', 'DT', 'ST'];
+
+			for (var i = 0; i < debugRegisters.length; i++) {
+				var val = parseInt($('#debug' + debugRegisters[i]).html(), 16);
+				if (chip8[debugRegisters[i]] != val) {
+					$('#debug' + debugRegisters[i]).addClass('changed');
+				} else {
+					$('#debug' + debugRegisters[i]).removeClass('changed');
+				}
+				$('#debug' + debugRegisters[i]).html(chip8[debugRegisters[i]].toString(16));
+			}
+
+			for (var i = 0; i < 0x10; i++) {
+				var val = parseInt($('#v' + i).html(), 16);
+				if (chip8.VX[i] != val) {
+					$('#v' + i).addClass('changed');
+				} else {
+					$('#v' + i).removeClass('changed');
+				}
+				$('#v' + i).html(chip8.VX[i].toString(16));
+			}
+
+			$('#peAddr').html(chip8.PC.toString(16));
+			$('#peInstruction').html((chip8.RAM[chip8.PC] << 8 | chip8.RAM[chip8.PC+1]).toString(16));
+
+			for (var i = 0; i < chip8.RAM.length; i++) {
+				var val = parseInt($('#ram' + i).html(), 16);
+
+				if (chip8.RAM[i] != val) {
+					$('#ram' + i).addClass('changed');
+				} else {
+					$('#ram' + i).removeClass('changed');
+				}
+
+				$('#ram' + i).html(chip8.RAM[i].toString(16));				
+			}
+		}
+
+
+
+		function tact() {
+			chip8.tact(1);
+			if (debug) {
+				renderEmulatorState();
+			} else {
+				$('#debugger').hide();
+			}
+		}
+
 		window.onload = function () {
 			document.getElementById('romSelector').addEventListener('change', handleFileSelect, false);
+			// document.getElementById('start').addEventListener('click', startEmulation, false);
 		};
+		
 	</script>
 </head>
 <body>
 	<input type="file" id="romSelector" />
+	<input type="button" id="start" />
+
+	<div id="debugger">
+
+	<h3>CPU Registers</h3>
+	<table border="1">
+	<thead>
+		<tr>
+			<td>I</td>
+			<td>PC</td>
+			<td>DT</td>
+			<td>ST</td>
+		</tr>
+	</thead>
+	<tr>
+		<td class="debug" id="debugI"></td>
+		<td class="debug" id="debugPC"></td>
+		<td class="debug" id="debugDT"></td>
+		<td class="debug" id="debugST"></td>
+	</tr>
+	</table>
+	<br/>
+	<table border="1">
+	<thead>
+		<tr>
+			<td>V0</td>
+			<td>V1</td>
+			<td>V2</td>
+			<td>V3</td>
+			<td>V4</td>
+			<td>V5</td>
+			<td>V6</td>
+			<td>V7</td>
+			<td>V8</td>
+			<td>V9</td>
+			<td>V10</td>
+			<td>V11</td>
+			<td>V12</td>
+			<td>V13</td>
+			<td>V14</td>
+			<td>V15</td>
+		</tr>
+	</thead>
+	<tr>
+		<td class="debug" id="v0"></td>
+		<td class="debug" id="v1"></td>
+		<td class="debug" id="v2"></td>
+		<td class="debug" id="v3"></td>
+		<td class="debug" id="v4"></td>
+		<td class="debug" id="v5"></td>
+		<td class="debug" id="v6"></td>
+		<td class="debug" id="v7"></td>
+		<td class="debug" id="v8"></td>
+		<td class="debug" id="v9"></td>
+		<td class="debug" id="v10"></td>
+		<td class="debug" id="v11"></td>
+		<td class="debug" id="v12"></td>
+		<td class="debug" id="v13"></td>
+		<td class="debug" id="v14"></td>
+		<td class="debug" id="v15"></td>
+	</tr>
+	</table>
+
+	<h3>Program execution</h3>
+	<table border="1">
+	<thead>
+		<tr>
+			<td>Address</td>
+			<td>Instruction</td>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td class="debug" id="peAddr"></td>
+			<td class="debug" id="peInstruction"></td>
+		</tr>
+	</tbody>
+	</table>
+
+	<h3>Stack</h3>
+	<table border="1">
+		<thead>
+			<tr>
+				<td>Stack Depth</td>
+				<td>Address</td>
+			</tr>
+		</thead>
+		<tbody>
+			<tr><td>0</td><td id="stack0"></td></tr>
+			<tr><td>1</td><td id="stack1"></td></tr>
+			<tr><td>2</td><td id="stack2"></td></tr>
+			<tr><td>3</td><td id="stack3"></td></tr>
+			<tr><td>4</td><td id="stack4"></td></tr>
+			<tr><td>5</td><td id="stack5"></td></tr>
+			<tr><td>6</td><td id="stack6"></td></tr>
+			<tr><td>7</td><td id="stack7"></td></tr>
+			<tr><td>8</td><td id="stack8"></td></tr>
+			<tr><td>9</td><td id="stack9"></td></tr>
+			<tr><td>10</td><td id="stack10"></td></tr>
+			<tr><td>11</td><td id="stack11"></td></tr>
+			<tr><td>12</td><td id="stack12"></td></tr>
+			<tr><td>13</td><td id="stack13"></td></tr>
+			<tr><td>14</td><td id="stack14"></td></tr>
+			<tr><td>15</td><td id="stack15"></td></tr>
+		</tbody>
+	</table>
+
+	<h3>RAM state</h3>
+	<table border="1">
+	<thead>
+		<tr>
+		<td>Address</td>
+		<td>Value</td>
+		</tr>
+	</thead>
+	<tbody id="ramView">
+	</tbody>
+	</table>
+
+	</div>
 
 
 

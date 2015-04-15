@@ -1,3 +1,4 @@
 var Chip8Keypad = function () {
-	this = new Uint8Array(0x10);
-};
+}
+
+Chip8Keypad.prototype = new Uint8Array(0x10);
