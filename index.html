@@ -6,7 +6,15 @@
 	<script type="text/javascript" src="js/Chip8GFX.js"></script>
 	<script type="text/javascript" src="js/Chip8Core.js"></script>
 	<style type="text/css">
+		body {
+			font-family: monospace;
+		}
+		td { 
+			width: 24px;
+		}
 		.changed { color: #f00; }
+		.current { color: #0f0;}
+
 	</style>
 	<script type="text/javascript">
 		var gfx = new Chip8GFX();
@@ -32,9 +40,20 @@
 		$(document).ready(function(){
 			chip8.initialize();
 
+			var html = '';
+			j = 0;
 			for (var i = 0; i < chip8.RAM.length; i++) { // initialize markup for RAM state
-				$('#ramView').append('<tr><td>' + i.toString(16) + '</td><td id="ram' + i + '">' + chip8.RAM[i].toString(16) + '</td></tr>');
+				if (j == 0) html += '<tr>' + '<td><b>' + i.toString(16) + '</b></td>';
+				html +=  '<td id="ram' + i + '">' + chip8.RAM[i].toString(16) + '</td>';
+				j++;
+				if (j == 16) {
+					j = 0;
+					html += '</tr>';
+				}
+				// $('#ramView').append('<tr><td>' + i.toString(16) + '</td><td id="ram' + i + '">' + chip8.RAM[i].toString(16) + '</td></tr>');
 			}
+
+			$('#ramView').append(html);
 
 			// function startEmulation(event) {
 			// 	//bindKeyboard();
@@ -88,8 +107,26 @@
 					$('#ram' + i).removeClass('changed');
 				}
 
-				$('#ram' + i).html(chip8.RAM[i].toString(16));				
+				$('#ram' + i).html(chip8.RAM[i].toString(16));
 			}
+
+			$('#ramDebugger td').removeClass('current');
+			$('#ram' + chip8.PC).addClass('current');
+			$('#ram' + (chip8.PC + 1)).addClass('current');
+
+
+			for (var i = 0; i < 0x10; i++) {
+				var val = parseInt($('#stack' + i).html(), 16);
+				if (val != chip8.Stack[i]) {
+					$('#stack' + i).addClass('changed');
+				} else {
+					$('#stack' + i).removeClass('changed');
+				}
+				$('#stack' + i).html(chip8.Stack[i].toString(16));
+			}
+
+			$('#stackDebugger td').removeClass('current');
+			$('#stack' + chip8.StackPointer).addClass('current');
 		}
 
 
@@ -120,10 +157,26 @@
 	<table border="1">
 	<thead>
 		<tr>
-			<td>I</td>
-			<td>PC</td>
-			<td>DT</td>
-			<td>ST</td>
+			<th>I</th>
+			<th>PC</th>
+			<th>DT</th>
+			<th>ST</th>
+			<th>V0</th>
+			<th>V1</th>
+			<th>V2</th>
+			<th>V3</th>
+			<th>V4</th>
+			<th>V5</th>
+			<th>V6</th>
+			<th>V7</th>
+			<th>V8</th>
+			<th>V9</th>
+			<th>V10</th>
+			<th>V11</th>
+			<th>V12</th>
+			<th>V13</th>
+			<th>V14</th>
+			<th>V15</th>
 		</tr>
 	</thead>
 	<tr>
@@ -131,31 +184,6 @@
 		<td class="debug" id="debugPC"></td>
 		<td class="debug" id="debugDT"></td>
 		<td class="debug" id="debugST"></td>
-	</tr>
-	</table>
-	<br/>
-	<table border="1">
-	<thead>
-		<tr>
-			<td>V0</td>
-			<td>V1</td>
-			<td>V2</td>
-			<td>V3</td>
-			<td>V4</td>
-			<td>V5</td>
-			<td>V6</td>
-			<td>V7</td>
-			<td>V8</td>
-			<td>V9</td>
-			<td>V10</td>
-			<td>V11</td>
-			<td>V12</td>
-			<td>V13</td>
-			<td>V14</td>
-			<td>V15</td>
-		</tr>
-	</thead>
-	<tr>
 		<td class="debug" id="v0"></td>
 		<td class="debug" id="v1"></td>
 		<td class="debug" id="v2"></td>
@@ -179,8 +207,8 @@
 	<table border="1">
 	<thead>
 		<tr>
-			<td>Address</td>
-			<td>Instruction</td>
+			<th>Address</th>
+			<th>Instruction</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -192,11 +220,11 @@
 	</table>
 
 	<h3>Stack</h3>
-	<table border="1">
+	<table id="stackDebugger" border="1">
 		<thead>
 			<tr>
-				<td>Stack Depth</td>
-				<td>Address</td>
+				<th>Stack Depth</th>
+				<th>Address</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -220,11 +248,26 @@
 	</table>
 
 	<h3>RAM state</h3>
-	<table border="1">
+	<table id="ramDebugger" border="1">
 	<thead>
 		<tr>
-		<td>Address</td>
-		<td>Value</td>
+		<th>Address</th>
+		<th>00</th>
+		<th>01</th>
+		<th>02</th>
+		<th>03</th>
+		<th>04</th>
+		<th>05</th>
+		<th>06</th>
+		<th>07</th>
+		<th>08</th>
+		<th>09</th>
+		<th>0A</th>
+		<th>0B</th>
+		<th>0C</th>
+		<th>0D</th>
+		<th>0E</th>
+		<th>0F</th>
 		</tr>
 	</thead>
 	<tbody id="ramView">

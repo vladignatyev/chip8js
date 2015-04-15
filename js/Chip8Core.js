@@ -129,8 +129,8 @@ var Chip8Core = function(GFX, Keypad) {
 			return;
 		} 
 		if (i == 2) { // 2nnn - CALL addr
-			this.StackPointer++;
 			this.Stack[this.StackPointer] = this.PC;
+			this.StackPointer++;
 			this.PC = instruction & 0xFFF;
 			return;
 		} 
