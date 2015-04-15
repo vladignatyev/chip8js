@@ -5,6 +5,7 @@
 	<script type="text/javascript" src="js/Chip8Keypad.js"></script>
 	<script type="text/javascript" src="js/Chip8GFX.js"></script>
 	<script type="text/javascript" src="js/Chip8Core.js"></script>
+	<script type="text/javascript" src="js/ChipDebugger.js"></script>
 	<style type="text/css">
 		body {
 			font-family: monospace;
@@ -13,7 +14,19 @@
 			width: 24px;
 		}
 		.changed { color: #f00; }
-		.current { color: #0f0;}
+		.current { background: #0f0;}
+		.black {
+			background: #000;
+		}
+		#gfxDebugger td {
+			width: 8px;
+			height: 8px;
+			border: 1px solid #000;
+		}
+
+		#peInstructionHelp {
+			white-space: nowrap;
+		}
 
 	</style>
 	<script type="text/javascript">
@@ -22,6 +35,7 @@
 		var chip8 = new Chip8Core(gfx, keypad);
 
 		var debug = true;
+		var chipDebugger = new ChipDebugger(chip8, gfx, keypad);
 
 		function handleFileSelect(event) {
 			var files = event.target.files;
@@ -30,111 +44,33 @@
 			
 			var reader = new FileReader();
 			reader.onloadend = function(){
+				gfx.initialize();
+				chip8.initialize();
 				chip8.loadROM(reader.result);
-				if (debug) renderEmulatorState();
+				if (debug) chipDebugger.renderEmulatorState();
+				setInterval(function(){
+					chip8.hw60HzClockTick();
+					// chip8.tact(25600);
+					
+				}, 16);
+				setInterval(function(){
+					chipDebugger.renderEmulatorState();
+				}, 50);
 			};
 			reader.readAsBinaryString(romFile);
 		};
 
 
 		$(document).ready(function(){
-			chip8.initialize();
-
-			var html = '';
-			j = 0;
-			for (var i = 0; i < chip8.RAM.length; i++) { // initialize markup for RAM state
-				if (j == 0) html += '<tr>' + '<td><b>' + i.toString(16) + '</b></td>';
-				html +=  '<td id="ram' + i + '">' + chip8.RAM[i].toString(16) + '</td>';
-				j++;
-				if (j == 16) {
-					j = 0;
-					html += '</tr>';
-				}
-				// $('#ramView').append('<tr><td>' + i.toString(16) + '</td><td id="ram' + i + '">' + chip8.RAM[i].toString(16) + '</td></tr>');
-			}
-
-			$('#ramView').append(html);
-
-			// function startEmulation(event) {
-			// 	//bindKeyboard();
-			// 	//startGfx();
-			// 	//startSound();
-
-			// 	// tactFrequencyTimer = setInterval(function(){
-			// 	// 	chip8.tact(1);
-			// 	// }, 50);
-
-			// 	// hw60HzTimer = setInterval(function(){
-			// 	// 	chip8.hw60HzClockTick();
-			// 	// }, Math.floor(1000 / 60));
-			// }
-
-			
+			chipDebugger.initialize();
+			chipDebugger.renderEmulatorState();
 		});
-
-		function renderEmulatorState() {
-			var debugRegisters = ['I', 'PC', 'DT', 'ST'];
-
-			for (var i = 0; i < debugRegisters.length; i++) {
-				var val = parseInt($('#debug' + debugRegisters[i]).html(), 16);
-				if (chip8[debugRegisters[i]] != val) {
-					$('#debug' + debugRegisters[i]).addClass('changed');
-				} else {
-					$('#debug' + debugRegisters[i]).removeClass('changed');
-				}
-				$('#debug' + debugRegisters[i]).html(chip8[debugRegisters[i]].toString(16));
-			}
-
-			for (var i = 0; i < 0x10; i++) {
-				var val = parseInt($('#v' + i).html(), 16);
-				if (chip8.VX[i] != val) {
-					$('#v' + i).addClass('changed');
-				} else {
-					$('#v' + i).removeClass('changed');
-				}
-				$('#v' + i).html(chip8.VX[i].toString(16));
-			}
-
-			$('#peAddr').html(chip8.PC.toString(16));
-			$('#peInstruction').html((chip8.RAM[chip8.PC] << 8 | chip8.RAM[chip8.PC+1]).toString(16));
-
-			for (var i = 0; i < chip8.RAM.length; i++) {
-				var val = parseInt($('#ram' + i).html(), 16);
-
-				if (chip8.RAM[i] != val) {
-					$('#ram' + i).addClass('changed');
-				} else {
-					$('#ram' + i).removeClass('changed');
-				}
-
-				$('#ram' + i).html(chip8.RAM[i].toString(16));
-			}
-
-			$('#ramDebugger td').removeClass('current');
-			$('#ram' + chip8.PC).addClass('current');
-			$('#ram' + (chip8.PC + 1)).addClass('current');
-
-
-			for (var i = 0; i < 0x10; i++) {
-				var val = parseInt($('#stack' + i).html(), 16);
-				if (val != chip8.Stack[i]) {
-					$('#stack' + i).addClass('changed');
-				} else {
-					$('#stack' + i).removeClass('changed');
-				}
-				$('#stack' + i).html(chip8.Stack[i].toString(16));
-			}
-
-			$('#stackDebugger td').removeClass('current');
-			$('#stack' + chip8.StackPointer).addClass('current');
-		}
-
-
 
 		function tact() {
 			chip8.tact(1);
 			if (debug) {
-				renderEmulatorState();
+				chipDebugger.renderEmulatorState();
+				chipDebugger.renderGfxState();
 			} else {
 				$('#debugger').hide();
 			}
@@ -153,127 +89,132 @@
 
 	<div id="debugger">
 
-	<h3>CPU Registers</h3>
-	<table border="1">
-	<thead>
-		<tr>
-			<th>I</th>
-			<th>PC</th>
-			<th>DT</th>
-			<th>ST</th>
-			<th>V0</th>
-			<th>V1</th>
-			<th>V2</th>
-			<th>V3</th>
-			<th>V4</th>
-			<th>V5</th>
-			<th>V6</th>
-			<th>V7</th>
-			<th>V8</th>
-			<th>V9</th>
-			<th>V10</th>
-			<th>V11</th>
-			<th>V12</th>
-			<th>V13</th>
-			<th>V14</th>
-			<th>V15</th>
-		</tr>
-	</thead>
-	<tr>
-		<td class="debug" id="debugI"></td>
-		<td class="debug" id="debugPC"></td>
-		<td class="debug" id="debugDT"></td>
-		<td class="debug" id="debugST"></td>
-		<td class="debug" id="v0"></td>
-		<td class="debug" id="v1"></td>
-		<td class="debug" id="v2"></td>
-		<td class="debug" id="v3"></td>
-		<td class="debug" id="v4"></td>
-		<td class="debug" id="v5"></td>
-		<td class="debug" id="v6"></td>
-		<td class="debug" id="v7"></td>
-		<td class="debug" id="v8"></td>
-		<td class="debug" id="v9"></td>
-		<td class="debug" id="v10"></td>
-		<td class="debug" id="v11"></td>
-		<td class="debug" id="v12"></td>
-		<td class="debug" id="v13"></td>
-		<td class="debug" id="v14"></td>
-		<td class="debug" id="v15"></td>
-	</tr>
-	</table>
-
-	<h3>Program execution</h3>
-	<table border="1">
-	<thead>
-		<tr>
-			<th>Address</th>
-			<th>Instruction</th>
-		</tr>
-	</thead>
-	<tbody>
-		<tr>
-			<td class="debug" id="peAddr"></td>
-			<td class="debug" id="peInstruction"></td>
-		</tr>
-	</tbody>
-	</table>
-
-	<h3>Stack</h3>
-	<table id="stackDebugger" border="1">
+		<h3>CPU Registers</h3>
+		<table border="1">
 		<thead>
 			<tr>
-				<th>Stack Depth</th>
+				<th>I</th>
+				<th>PC</th>
+				<th>DT</th>
+				<th>ST</th>
+				<th>V00</th>
+				<th>V01</th>
+				<th>V02</th>
+				<th>V03</th>
+				<th>V04</th>
+				<th>V05</th>
+				<th>V06</th>
+				<th>V07</th>
+				<th>V08</th>
+				<th>V09</th>
+				<th>V0A</th>
+				<th>V0B</th>
+				<th>V0C</th>
+				<th>V0D</th>
+				<th>V0E</th>
+				<th>V0F</th>
+			</tr>
+		</thead>
+		<tr>
+			<td class="debug" id="debugI"></td>
+			<td class="debug" id="debugPC"></td>
+			<td class="debug" id="debugDT"></td>
+			<td class="debug" id="debugST"></td>
+			<td class="debug" id="v0"></td>
+			<td class="debug" id="v1"></td>
+			<td class="debug" id="v2"></td>
+			<td class="debug" id="v3"></td>
+			<td class="debug" id="v4"></td>
+			<td class="debug" id="v5"></td>
+			<td class="debug" id="v6"></td>
+			<td class="debug" id="v7"></td>
+			<td class="debug" id="v8"></td>
+			<td class="debug" id="v9"></td>
+			<td class="debug" id="v10"></td>
+			<td class="debug" id="v11"></td>
+			<td class="debug" id="v12"></td>
+			<td class="debug" id="v13"></td>
+			<td class="debug" id="v14"></td>
+			<td class="debug" id="v15"></td>
+		</tr>
+		</table>
+
+		<h3>Program execution</h3>
+		<table border="1">
+		<thead>
+			<tr>
 				<th>Address</th>
+				<th>Instruction</th>
+				<th>Help</th>
 			</tr>
 		</thead>
 		<tbody>
-			<tr><td>0</td><td id="stack0"></td></tr>
-			<tr><td>1</td><td id="stack1"></td></tr>
-			<tr><td>2</td><td id="stack2"></td></tr>
-			<tr><td>3</td><td id="stack3"></td></tr>
-			<tr><td>4</td><td id="stack4"></td></tr>
-			<tr><td>5</td><td id="stack5"></td></tr>
-			<tr><td>6</td><td id="stack6"></td></tr>
-			<tr><td>7</td><td id="stack7"></td></tr>
-			<tr><td>8</td><td id="stack8"></td></tr>
-			<tr><td>9</td><td id="stack9"></td></tr>
-			<tr><td>10</td><td id="stack10"></td></tr>
-			<tr><td>11</td><td id="stack11"></td></tr>
-			<tr><td>12</td><td id="stack12"></td></tr>
-			<tr><td>13</td><td id="stack13"></td></tr>
-			<tr><td>14</td><td id="stack14"></td></tr>
-			<tr><td>15</td><td id="stack15"></td></tr>
+			<tr>
+				<td class="debug" id="peAddr"></td>
+				<td class="debug" id="peInstruction"></td>
+				<td class="debug" id="peInstructionHelp"></td>
+			</tr>
 		</tbody>
-	</table>
+		</table>
 
-	<h3>RAM state</h3>
-	<table id="ramDebugger" border="1">
-	<thead>
-		<tr>
-		<th>Address</th>
-		<th>00</th>
-		<th>01</th>
-		<th>02</th>
-		<th>03</th>
-		<th>04</th>
-		<th>05</th>
-		<th>06</th>
-		<th>07</th>
-		<th>08</th>
-		<th>09</th>
-		<th>0A</th>
-		<th>0B</th>
-		<th>0C</th>
-		<th>0D</th>
-		<th>0E</th>
-		<th>0F</th>
-		</tr>
-	</thead>
-	<tbody id="ramView">
-	</tbody>
-	</table>
+		<h3>Stack</h3>
+		<table id="stackDebugger" border="1">
+			<thead>
+				<tr>
+					<th>Stack Depth</th>
+					<th>Address</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr><td>0</td><td id="stack0"></td></tr>
+				<tr><td>1</td><td id="stack1"></td></tr>
+				<tr><td>2</td><td id="stack2"></td></tr>
+				<tr><td>3</td><td id="stack3"></td></tr>
+				<tr><td>4</td><td id="stack4"></td></tr>
+				<tr><td>5</td><td id="stack5"></td></tr>
+				<tr><td>6</td><td id="stack6"></td></tr>
+				<tr><td>7</td><td id="stack7"></td></tr>
+				<tr><td>8</td><td id="stack8"></td></tr>
+				<tr><td>9</td><td id="stack9"></td></tr>
+				<tr><td>10</td><td id="stack10"></td></tr>
+				<tr><td>11</td><td id="stack11"></td></tr>
+				<tr><td>12</td><td id="stack12"></td></tr>
+				<tr><td>13</td><td id="stack13"></td></tr>
+				<tr><td>14</td><td id="stack14"></td></tr>
+				<tr><td>15</td><td id="stack15"></td></tr>
+			</tbody>
+		</table>
 
+		<h3>GFX state</h3>
+		<table id="gfxDebugger">
+		</table>
+
+		<h3>RAM state</h3>
+		<table id="ramDebugger" border="1">
+		<thead>
+			<tr>
+			<th>Address</th>
+			<th>00</th>
+			<th>01</th>
+			<th>02</th>
+			<th>03</th>
+			<th>04</th>
+			<th>05</th>
+			<th>06</th>
+			<th>07</th>
+			<th>08</th>
+			<th>09</th>
+			<th>0A</th>
+			<th>0B</th>
+			<th>0C</th>
+			<th>0D</th>
+			<th>0E</th>
+			<th>0F</th>
+			</tr>
+		</thead>
+		<tbody id="ramView">
+		</tbody>
+		</table>
 	</div>
 
 

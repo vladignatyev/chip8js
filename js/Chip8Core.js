@@ -108,9 +108,10 @@ var Chip8Core = function(GFX, Keypad) {
 	};
 
 	this.processInstruction = function(instruction) {
+		this.PC = this.PC + 2;
 		if (instruction == 0x00E0) { // 00E0 CLS
 			GFX.clearTheDisplay();
-			this.PC = this.PC + 2; return;
+			return;
 		}
 
 		/* Program execution flow instructions */
@@ -119,8 +120,8 @@ var Chip8Core = function(GFX, Keypad) {
 		var j = instruction & 0x0F;
 
 		if (instruction == 0x00EE) { // 0x00EE RET
-			this.PC = this.Stack[this.StackPointer];
 			this.StackPointer--;
+			this.PC = this.Stack[this.StackPointer];
 			return;
 		}
 
@@ -138,16 +139,19 @@ var Chip8Core = function(GFX, Keypad) {
 
 		/*  */
 		if (i == 3) { // 3xkk - SE Vx, byte
-			if (this.VX[instruction >> 8 & 0x0F] /* Vx */ == /* kk */ instruction & 0x00FF)
+			if (this.VX[instruction >> 8 & 0x0F] /* Vx */ == /* kk */ (instruction & 0x00FF)) {
 				this.PC = this.PC + 2;
+			}
 		}
 		if (i == 4) { // 4xkk - SNE Vx, byte
-			if (this.VX[instruction >> 8 & 0x0F] /* Vx */ != /* kk */ instruction & 0x00FF)
+			if (this.VX[instruction >> 8 & 0x0F] /* Vx */ != /* kk */ (instruction & 0x00FF)) {
 				this.PC = this.PC + 2;
+			}
 		}
 		if (i == 5) { // 5xy0 - SE Vx, Vy
-			if (this.VX[instruction >> 8 & 0x0F] /* Vx */ == /* Vy */ this.VX[instruction >> 4 & 0x0F])
+			if (this.VX[instruction >> 8 & 0x0F] /* Vx */ == /* Vy */ this.VX[instruction >> 4 & 0x0F]) {
 				this.PC = this.PC + 2;
+			}
 		}
 		if (i == 6) { // 6xkk - LD Vx, byte
 			this.VX[instruction >> 8 & 0x0F] /* Vx */ = /* kk */ instruction & 0x00FF;
@@ -222,6 +226,7 @@ var Chip8Core = function(GFX, Keypad) {
 		}
 		if (i == 0xB) { // Bnnn - JP V0, addr
 			this.PC = instruction & 0xFFF + this.VX[0];
+			return;
 		}
 		if (i == 0xC) { // Cxkk - RND Vx, byte
 			this.VX[instruction >> 8 & 0x0F] /* Vx */ = Math.ceil(Math.random() * 0xFF);
@@ -243,50 +248,50 @@ var Chip8Core = function(GFX, Keypad) {
 				this.VX[0xF] = 0;
 			}
 		}
-		if (i == 0xE && (instruction & 0xFF == 0x9E)) { // Ex9E - SKP Vx
+		if (i == 0xE && ((instruction & 0xFF) == 0x9E)) { // Ex9E - SKP Vx
 			if (Keypad[this.VX[instruction >> 8 & 0x0F]] == 1)
 				this.PC = this.PC + 2;
 		}
-		if (i == 0xE && (instruction & 0xFF == 0xA1)) { // ExA1 - SKNP Vx
+		if (i == 0xE && ((instruction & 0xFF) == 0xA1)) { // ExA1 - SKNP Vx
 			if (Keypad[this.VX[instruction >> 8 & 0x0F]] == 0)
 				this.PC = this.PC + 2;
 		}
-		if (i == 0xF && (instruction & 0xFF == 0x07)) { // Fx07 - LD Vx, DT
+		if (i == 0xF && ((instruction & 0xFF) == 0x07)) { // Fx07 - LD Vx, DT
 			this.VX[instruction >> 8 & 0x0F] /* Vx */ = this.DT;
 		}
-		if (i == 0xF && (instruction & 0xFF == 0x0A)) { // Fx0A - LD Vx, K
+		if (i == 0xF && ((instruction & 0xFF) == 0x0A)) { // Fx0A - LD Vx, K
 			breakUntilKeypress = true;
-			breakUntilKeypressVx = this.VX[instruction >> 8 & 0x0F];
+			breakUntilKeypressVx = instruction >> 8 & 0x0F;
 		}
-		if (i == 0xF && (instruction & 0xFF == 0x15)) { // Fx15 - LD DT, Vx
+		if (i == 0xF && ((instruction & 0xFF) == 0x15)) { // Fx15 - LD DT, Vx
 			this.DT = this.VX[instruction >> 8 & 0x0F] /* Vx */;
 		}
-		if (i == 0xF && (instruction & 0xFF == 0x18)) { // Fx18 - LD ST, Vx
+		if (i == 0xF && ((instruction & 0xFF) == 0x18)) { // Fx18 - LD ST, Vx
 			this.ST = this.VX[instruction >> 8 & 0x0F] /* Vx */;
 		}
-		if (i == 0xF && (instruction & 0xFF == 0x1E)) { // Fx1E - ADD I, Vx
+		if (i == 0xF && ((instruction & 0xFF) == 0x1E)) { // Fx1E - ADD I, Vx
 			this.I = (this.I + this.VX[instruction >> 8 & 0x0F] /* Vx */) & 0xFFF;
 		}
-		if (i == 0xF && (instruction & 0xFF == 0x29)) { // Fx29 - LD F, Vx
+		if (i == 0xF && ((instruction & 0xFF) == 0x29)) { // Fx29 - LD F, Vx
 			this.I = this.VX[instruction >> 8 & 0x0F] /* Vx */ * 5 + FontSetAddr;
 		}
-		if (i == 0xF && (instruction & 0xFF == 0x33)) { // Fx33 - LD B, Vx
+		if (i == 0xF && ((instruction & 0xFF) == 0x33)) { // Fx33 - LD B, Vx
 			var bcdVx = (this.VX[instruction >> 8 & 0x0F] /* Vx */).toString(10);
-			this.RAM[this.I] = bcdVx.charCodeAt(0);
-			this.RAM[this.I + 1] = bcdVx.charCodeAt(1);
-			this.RAM[this.I + 2] = bcdVx.charCodeAt(2);
+			this.RAM[this.I] = parseInt(bcdVx[0]);
+			this.RAM[this.I + 1] = parseInt(bcdVx[1]);
+			this.RAM[this.I + 2] = parseInt(bcdVx[2]);
 		}
-		if (i == 0xF && (instruction & 0xFF == 0x55)) { // Fx55 - LD [I], Vx
+		if (i == 0xF && ((instruction & 0xFF) == 0x55)) { // Fx55 - LD [I], Vx
 			for (var k = 0x00; k < 0x10; k++) {
 				this.RAM[this.I + k] = this.VX[k];
 			}
 		}
-		if (i == 0xF && (instruction & 0xFF == 0x65)) { // Fx65 - LD Vx, [I]
+		if (i == 0xF && ((instruction & 0xFF) == 0x65)) { // Fx65 - LD Vx, [I]
 			for (var k = 0x00; k < 0x10; k++) {
 				this.VX[k] = this.RAM[this.I + k];
 			}
 		}
 
-		this.PC = this.PC + 2;
+		
 	};
 };
