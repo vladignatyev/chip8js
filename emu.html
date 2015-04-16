@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.3.min.js"></script>
+	<script type="text/javascript" src="js/Chip8Keypad.js"></script>
+	<script type="text/javascript" src="js/Chip8GFX.js"></script>
+	<script type="text/javascript" src="js/Chip8Core.js"></script>
+	
+	<script type="text/javascript">
+		var gfx = new Chip8GFX(),
+				keypad = new Chip8Keypad(),
+				chip8 = new Chip8Core(gfx, keypad),
+				time, canvasCtx, canvasData;
+
+
+		function handleFileSelect(event) {
+			var files = event.target.files;
+			var romFile = files[0];
+
+			
+			var reader = new FileReader();
+			reader.onloadend = function(){
+				startEmulation(reader.result);
+			};
+			reader.readAsBinaryString(romFile);
+		};
+
+		function startEmulation(romData) {
+			gfx.initialize();
+			chip8.initialize();
+			chip8.loadROM(romData);
+			draw();
+			setInterval(function(){
+				chip8.tact(4);
+			}, 16);
+		}
+
+		function draw() {
+	    requestAnimationFrame(draw);
+	    var now = new Date().getTime(),
+	        dt = now - (time || now);
+	 
+	    time = now;
+
+	    chip8.hw60HzClockTick();
+
+	    presentGfx();
+		}
+
+
+		function presentGfx () {
+			var data = canvasData.data;
+
+			for (var j = 0; j < 32; j++) {
+				for (var i = 0; i < 64; i++) {
+					var val = 0;
+					if (gfx.VRAM[gfx.xy(i, j)] == 1) {
+						val = 255;
+					} 
+
+					for (var k = 0; k < 8; k++) {
+						for (var m = 0; m < 8; m++) {
+							var px = (i * 8 + k);
+							var py = (j * 8 + m) * 512;
+							var index = (px + py) * 4;
+
+							data[index] = val;
+							data[index + 1] = val;
+							data[index + 2] = val;
+							data[index + 3] = 255;
+						}
+					}
+					
+				}
+			}
+
+			canvasCtx.putImageData(canvasData, 0, 0, 0, 0, 512, 256);
+		}
+
+
+
+		window.onload = function () {
+			document.getElementById('romSelector').addEventListener('change', handleFileSelect, false);
+			var canvas = document.getElementById('canvas');
+			canvasCtx = canvas.getContext('2d');
+
+			canvasData = canvasCtx.createImageData(512, 256); // width x height
+			gfx.initialize();
+			presentGfx();
+		};
+
+		$(document).on('keydown', function(event){
+			var keycode = event.keyCode;
+			if (keycode == 49) keypad[0x01] = 1;
+			if (keycode == 50) keypad[0x02] = 1;
+			if (keycode == 51) keypad[0x03] = 1;
+			if (keycode == 52) keypad[0x0C] = 1;
+
+			if (keycode == 81) keypad[0x04] = 1;
+			if (keycode == 87) keypad[0x05] = 1;
+			if (keycode == 69) keypad[0x06] = 1;
+			if (keycode == 82) keypad[0x0D] = 1;
+			
+			if (keycode == 65) keypad[0x07] = 1;
+			if (keycode == 83) keypad[0x08] = 1;
+			if (keycode == 68) keypad[0x09] = 1;
+			if (keycode == 70) keypad[0x0E] = 1;
+
+			if (keycode == 90) keypad[0x0A] = 1;
+			if (keycode == 88) keypad[0x00] = 1;
+			if (keycode == 67) keypad[0x0B] = 1;
+			if (keycode == 86) keypad[0x0F] = 1;
+
+		}).on('keyup', function(event){
+			var keycode = event.keyCode;
+			if (keycode == 49) keypad[0x01] = 0;
+			if (keycode == 50) keypad[0x02] = 0;
+			if (keycode == 51) keypad[0x03] = 0;
+			if (keycode == 52) keypad[0x0C] = 0;
+
+			if (keycode == 81) keypad[0x04] = 0;
+			if (keycode == 87) keypad[0x05] = 0;
+			if (keycode == 69) keypad[0x06] = 0;
+			if (keycode == 82) keypad[0x0D] = 0;
+			
+			if (keycode == 65) keypad[0x07] = 0;
+			if (keycode == 83) keypad[0x08] = 0;
+			if (keycode == 68) keypad[0x09] = 0;
+			if (keycode == 70) keypad[0x0E] = 0;
+
+			if (keycode == 90) keypad[0x0A] = 0;
+			if (keycode == 88) keypad[0x00] = 0;
+			if (keycode == 67) keypad[0x0B] = 0;
+			if (keycode == 86) keypad[0x0F] = 0;
+
+		});	
+		
+	</script>
+</head>
+<body>
+	<input type="file" id="romSelector" />
+	<br/>
+	
+	<canvas id="canvas" width="512" height="256"></canvas>
+
+
+</body>
+</html>

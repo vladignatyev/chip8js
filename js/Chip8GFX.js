@@ -13,7 +13,7 @@ var Chip8GFX = function () {
 	};
 
 	this.renderSpriteCall = function (x, y, spriteRowBytes) {
-		var result = true,
+		var result = false,
 				currentPixel, rowByte,
 				newPixel, xorPixel,
 				curX = x, curY = y; 
@@ -23,11 +23,14 @@ var Chip8GFX = function () {
 			rowByte = spriteRowBytes[row];
 
 			for (var b = 7; b >= 0; b--) {
-				currentPixel = this.VRAM[this.xy(curX, curY)];
 				newPixel = (rowByte >> b) & 0x01;
+				if (newPixel != 0) {
+
+				currentPixel = this.VRAM[this.xy(curX, curY)];
 				xorPixel = currentPixel ^ newPixel;
-				if (newPixel == 1 && xorPixel == 0) result = false;
+				if (xorPixel == 0 && currentPixel == 1) result = true;
 				this.VRAM[this.xy(curX, curY)] = xorPixel;
+			}
 				curX++;
 			}
 			curY++;

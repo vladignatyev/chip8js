@@ -53,12 +53,14 @@
 					// chip8.tact(25600);
 					
 				}, 16);
-				setInterval(function(){
-					chipDebugger.renderEmulatorState();
-				}, 50);
+				
 			};
 			reader.readAsBinaryString(romFile);
 		};
+
+		function startEmulation() {
+			setInterval(tact, 16);
+		}
 
 
 		$(document).ready(function(){
@@ -80,6 +82,52 @@
 			document.getElementById('romSelector').addEventListener('change', handleFileSelect, false);
 			// document.getElementById('start').addEventListener('click', startEmulation, false);
 		};
+
+		$(document).on('keydown', function(event){
+			var keycode = event.keyCode;
+			if (keycode == 49) keypad[0x01] = 1;
+			if (keycode == 50) keypad[0x02] = 1;
+			if (keycode == 51) keypad[0x03] = 1;
+			if (keycode == 52) keypad[0x0C] = 1;
+
+			if (keycode == 81) keypad[0x04] = 1;
+			if (keycode == 87) keypad[0x05] = 1;
+			if (keycode == 69) keypad[0x06] = 1;
+			if (keycode == 82) keypad[0x0D] = 1;
+			
+			if (keycode == 65) keypad[0x07] = 1;
+			if (keycode == 83) keypad[0x08] = 1;
+			if (keycode == 68) keypad[0x09] = 1;
+			if (keycode == 70) keypad[0x0E] = 1;
+
+			if (keycode == 90) keypad[0x0A] = 1;
+			if (keycode == 88) keypad[0x00] = 1;
+			if (keycode == 67) keypad[0x0B] = 1;
+			if (keycode == 86) keypad[0x0F] = 1;
+
+		}).on('keyup', function(event){
+			var keycode = event.keyCode;
+			if (keycode == 49) keypad[0x01] = 0;
+			if (keycode == 50) keypad[0x02] = 0;
+			if (keycode == 51) keypad[0x03] = 0;
+			if (keycode == 52) keypad[0x0C] = 0;
+
+			if (keycode == 81) keypad[0x04] = 0;
+			if (keycode == 87) keypad[0x05] = 0;
+			if (keycode == 69) keypad[0x06] = 0;
+			if (keycode == 82) keypad[0x0D] = 0;
+			
+			if (keycode == 65) keypad[0x07] = 0;
+			if (keycode == 83) keypad[0x08] = 0;
+			if (keycode == 68) keypad[0x09] = 0;
+			if (keycode == 70) keypad[0x0E] = 0;
+
+			if (keycode == 90) keypad[0x0A] = 0;
+			if (keycode == 88) keypad[0x00] = 0;
+			if (keycode == 67) keypad[0x0B] = 0;
+			if (keycode == 86) keypad[0x0F] = 0;
+
+		});	
 		
 	</script>
 </head>
@@ -187,6 +235,14 @@
 
 		<h3>GFX state</h3>
 		<table id="gfxDebugger">
+		</table>
+
+		<h3>Keypad state</h3>
+		<table id="keypadDebugger">
+		<tr><td id="key1">1</td><td id="key2">2</td><td id="key3">3</td><td id="key12">C</td></tr>
+		<tr><td id="key4">4</td><td id="key5">5</td><td id="key6">6</td><td id="key13">D</td></tr>
+		<tr><td id="key7">7</td><td id="key8">8</td><td id="key9">9</td><td id="key14">E</td></tr>
+		<tr><td id="key10">A</td><td id="key5">0</td><td id="key11">B</td><td id="key15">F</td></tr>
 		</table>
 
 		<h3>RAM state</h3>

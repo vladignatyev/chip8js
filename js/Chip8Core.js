@@ -157,7 +157,11 @@ var Chip8Core = function(GFX, Keypad) {
 			this.VX[instruction >> 8 & 0x0F] /* Vx */ = /* kk */ instruction & 0x00FF;
 		}
 		if (i == 7) { // 7xkk - ADD Vx, byte
-			this.VX[instruction >> 8 & 0x0F] /* Vx */ = /* Vx */ this.VX[instruction >> 8 & 0x0F] + /* kk */ instruction & 0x00FF;
+			var val = /* Vx */ this.VX[instruction >> 8 & 0x0F] + /* kk */ instruction & 0x00FF;
+			if (val > 255) {
+        val -= 256;
+       }
+			this.VX[instruction >> 8 & 0x0F] /* Vx */ = val;
 		}
 		if (i == 8 && j == 0x0) { // 8xy0 - LD Vx, Vy
 			this.VX[instruction >> 8 & 0x0F] /* Vx */ = /* Vy */ this.VX[instruction >> 4 & 0x0F];
@@ -172,24 +176,33 @@ var Chip8Core = function(GFX, Keypad) {
 			this.VX[instruction >> 8 & 0x0F] /* Vx */ = /* Vx */ this.VX[instruction >> 8 & 0x0F] ^ /* Vy */ this.VX[instruction >> 4 & 0x0F];
 		}
 		if (i == 8 && j == 0x4) { // 8xy4 - ADD Vx, Vy
-			this.VX[instruction >> 8 & 0x0F] /* Vx */ = /* Vx */ this.VX[instruction >> 8 & 0x0F] + /* Vy */ this.VX[instruction >> 4 & 0x0F];
-			if (this.VX[instruction >> 8 & 0x0F] > 0xFF) {
-				this.VX[instruction >> 8 & 0x0F] &= 0xFF;
+			var val = /* Vx */ this.VX[instruction >> 8 & 0x0F] + /* Vy */ this.VX[instruction >> 4 & 0x0F];
+
+			if (val > 0xFF) {
+				this.VX[instruction >> 8 & 0x0F] /* Vx */ = val - 0xFF;
 				this.VX[0x0F] = 1;
 			} else {
+				this.VX[instruction >> 8 & 0x0F] /* Vx */ = val;
 				this.VX[0x0F] = 0;
 			}
 		}
 		if (i == 8 && j == 0x5) { // 8xy5 - SUB Vx, Vy
+			var val = /* Vx */ this.VX[instruction >> 8 & 0x0F] - /* Vy */ this.VX[instruction >> 4 & 0x0F];
+
+			if (val < 0) {
+				val += 0xFF;
+			}
+
 			if (this.VX[instruction >> 8 & 0x0F] /* Vx */ > /* Vy */ this.VX[instruction >> 4 & 0x0F]) {
 				this.VX[0x0F] = 1;
 			} else {
 				this.VX[0x0F] = 0;
 			}
-			this.VX[instruction >> 8 & 0x0F] /* Vx */ = (/* Vx */ this.VX[instruction >> 8 & 0x0F] - /* Vy */ this.VX[instruction >> 4 & 0x0F]) & 0xFF;
+			
+			this.VX[instruction >> 8 & 0x0F] /* Vx */ = val;
 		}
 		if (i == 8 && j == 0x6) { // 8xy6 - SHR Vx {, Vy}
-			if (this.VX[instruction >> 8 & 0x0F] /* Vx */ & 0x01 == 1) {
+			if ((this.VX[instruction >> 8 & 0x0F] /* Vx */ & 0x01) == 1) {
 				this.VX[0x0F] = 1;
 			} else {
 				this.VX[0x0F] = 0;
@@ -198,7 +211,11 @@ var Chip8Core = function(GFX, Keypad) {
 			this.VX[instruction >> 8 & 0x0F] /* Vx */ = /* Vx */ this.VX[instruction >> 8 & 0x0F] >> 1;
 		}
 		if (i == 8 && j == 0x7) { // 8xy7 - SUBN Vx, Vy
-			this.VX[instruction >> 8 & 0x0F] /* Vx */ = (/* Vy */ this.VX[instruction >> 4 & 0x0F] - /* Vx */ this.VX[instruction >> 8 & 0x0F]) & 0xFF;
+			var val = /* Vx */ this.VX[instruction >> 4 & 0x0F] - /* Vy */ this.VX[instruction >> 8 & 0x0F];
+
+			if (val < 0) {
+				val += 0xFF;
+			}
 
 			if (this.VX[instruction >> 4 & 0x0F] /* Vy */ > this.VX[instruction >> 8 & 0x0F] /* Vx */) {
 				this.VX[0x0F] = 1;
@@ -206,16 +223,15 @@ var Chip8Core = function(GFX, Keypad) {
 				this.VX[0x0F] = 0;
 			}
 
-			this.VX[instruction >> 8 & 0x0F] /* Vx */ = /* Vx */ this.VX[instruction >> 8 & 0x0F] > 1;
+			this.VX[instruction >> 8 & 0x0F] /* Vx */ = val;
 		}
 		if (i == 8 && j == 0xE) { // 8xyE - SHL Vx {, Vy}
-			if (this.VX[instruction >> 8 & 0x0F] /* Vx */ >> 7 == 1) {
-				this.VX[0x0F] = 1;
-			} else {
-				this.VX[0x0F] = 0;
-			}
+			this.VX[0xF] = +(this.VX[instruction >> 8 & 0x0F] & 0x80);
 
-			this.VX[instruction >> 8 & 0x0F] /* Vx */ = /* Vx */ this.VX[instruction >> 8 & 0x0F] << 1;
+			var val = /* Vx */ this.VX[instruction >> 8 & 0x0F] << 1;
+			if (val > 0xFF) val -= 0xFF;
+
+			this.VX[instruction >> 8 & 0x0F] /* Vx */ = val;
 		} 
 		if (i == 9 && j == 0) { // 9xy0 - SNE Vx, Vy
 			if (this.VX[instruction >> 8 & 0x0F] /* Vx */ != /* Vy */ this.VX[instruction >> 4 & 0x0F])
@@ -229,7 +245,7 @@ var Chip8Core = function(GFX, Keypad) {
 			return;
 		}
 		if (i == 0xC) { // Cxkk - RND Vx, byte
-			this.VX[instruction >> 8 & 0x0F] /* Vx */ = Math.ceil(Math.random() * 0xFF);
+			this.VX[instruction >> 8 & 0x0F] /* Vx */ = Math.floor(Math.random() * 0xFF) & (instruction & 0xFF);
 		}
 		if (i == 0xD) { // Dxyn - DRW Vx, Vy, nibble
 			var Vx = this.VX[instruction >> 8 & 0x0F] /* Vx */;
@@ -249,12 +265,14 @@ var Chip8Core = function(GFX, Keypad) {
 			}
 		}
 		if (i == 0xE && ((instruction & 0xFF) == 0x9E)) { // Ex9E - SKP Vx
-			if (Keypad[this.VX[instruction >> 8 & 0x0F]] == 1)
+			if (Keypad[this.VX[instruction >> 8 & 0x0F]] == 1) {
 				this.PC = this.PC + 2;
+			}
 		}
 		if (i == 0xE && ((instruction & 0xFF) == 0xA1)) { // ExA1 - SKNP Vx
-			if (Keypad[this.VX[instruction >> 8 & 0x0F]] == 0)
+			if (Keypad[this.VX[instruction >> 8 & 0x0F]] == 0) {
 				this.PC = this.PC + 2;
+			}
 		}
 		if (i == 0xF && ((instruction & 0xFF) == 0x07)) { // Fx07 - LD Vx, DT
 			this.VX[instruction >> 8 & 0x0F] /* Vx */ = this.DT;
